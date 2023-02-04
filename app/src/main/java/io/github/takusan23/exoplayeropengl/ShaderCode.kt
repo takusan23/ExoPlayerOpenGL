@@ -21,10 +21,11 @@ object ShaderCode {
         attribute vec4 aFramePosition;
         attribute vec4 aTexCoords;
         uniform mat4 uTexTransform;
+        uniform mat4 scaleTransform;
         varying vec2 vTexCoords;
         
         void main() {
-         gl_Position = aFramePosition;
+         gl_Position = aFramePosition * scaleTransform;
          vTexCoords = (uTexTransform * aTexCoords).xy;
         }
     """
@@ -58,7 +59,7 @@ object ShaderCode {
         varying vec2 vTexCoords;
         
         void main() {
-          vec4 videoColor = texture2D(uTexSampler0, vec2(vTexCoords.x, vTexCoords.y * 1.7));       
+          vec4 videoColor = texture2D(uTexSampler0, vec2(vTexCoords.x, vTexCoords.y));       
           vec4 overlayColor = texture2D(uTexSampler1, vec2(vTexCoords.x * uScaleX, vTexCoords.y * uScaleY));
 
           // Blend the video decoder output and the overlay bitmap.

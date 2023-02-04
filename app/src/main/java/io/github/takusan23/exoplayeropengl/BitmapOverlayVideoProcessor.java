@@ -24,6 +24,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.opengl.GLES20;
 import android.opengl.GLUtils;
+import android.opengl.Matrix;
 
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableKt;
@@ -89,9 +90,8 @@ import javax.microedition.khronos.opengles.GL10;
                 GlUtil.getNormalizedCoordinateBounds(),
                 GlUtil.HOMOGENEOUS_COORDINATE_VECTOR_SIZE);
 
-        float[] texcoord = GlUtil.getTextureCoordinateBounds();
         program.setBufferAttribute("aTexCoords",
-                texcoord,
+                GlUtil.getTextureCoordinateBounds(),
                 GlUtil.HOMOGENEOUS_COORDINATE_VECTOR_SIZE);
 
         GLES20.glGenTextures(1, textures, 0);
@@ -101,12 +101,6 @@ import javax.microedition.khronos.opengles.GL10;
         GLES20.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
         GLES20.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);
         GLUtils.texImage2D(GL10.GL_TEXTURE_2D, /* level= */ 0, overlayBitmap, /* border= */ 0);
-
-        // GLES20.glActiveTexture(0);
-        // GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
-        // GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-        // GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-        // GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
     }
 
     @Override
@@ -138,14 +132,14 @@ import javax.microedition.khronos.opengles.GL10;
         program.setFloatUniform("uScaleX", bitmapScaleX);
         program.setFloatUniform("uScaleY", bitmapScaleY);
 
-        // https://stackoverflow.com/questions/33773770/use-rotatem-of-matrix-to-rotate-matrix-from-surfacetexture-but-corrupt-the-vid
-        float[] scaleMatrix = new float[16];
-        // Matrix.setIdentityM(transformMatrix, 0);
-        //System.out.println(Arrays.toString(scaleMatrix));
-        //program.setFloatsUniform("uTexScale", scaleMatrix);
+        // 0.5 にして表示する
+        float[] scaleTransform = GlUtil.getNormalizedCoordinateBounds();
+        Matrix.setIdentityM(scaleTransform, 0);
+        Matrix.scaleM(scaleTransform, 0, .5f, .5f, 1f);
+        program.setFloatsUniform("scaleTransform", scaleTransform);
 
-        // Matrix.scaleM(transformMatrix, 0, 1f, 0.7f, 1f);
         program.setFloatsUniform("uTexTransform", transformMatrix);
+
         try {
             program.bindAttributesAndUniforms();
         } catch (GlUtil.GlException e) {
