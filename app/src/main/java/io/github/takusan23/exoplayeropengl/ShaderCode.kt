@@ -31,6 +31,8 @@ object ShaderCode {
     """
 
     @JvmField
+    // GLSL なので Android Graphic Shader Language ではないけど 無いよりマシなので
+    // language=agsl
     val FRAGMENT_SHADER = """
         // Copyright 2020 The Android Open Source Project
         //
@@ -53,17 +55,23 @@ object ShaderCode {
         // Texture containing the overlap bitmap.
         uniform sampler2D uTexSampler1;
         // Horizontal scaling factor for the overlap bitmap.
-        uniform float uScaleX;
+        // uniform float uScaleX;
         // Vertical scaling factory for the overlap bitmap.
-        uniform float uScaleY;
+        // uniform float uScaleY;
         varying vec2 vTexCoords;
+        
+        uniform int uDrawVideo;
         
         void main() {
           vec4 videoColor = texture2D(uTexSampler0, vec2(vTexCoords.x, vTexCoords.y));       
-          vec4 overlayColor = texture2D(uTexSampler1, vec2(vTexCoords.x * uScaleX, vTexCoords.y * uScaleY));
+          vec4 overlayColor = texture2D(uTexSampler1, vec2(vTexCoords.x, vTexCoords.y));
 
-          // Blend the video decoder output and the overlay bitmap.
-          gl_FragColor = videoColor * (1.0 - overlayColor.a) + overlayColor * overlayColor.a;
+          // 映像の描画 or テクスチャの描画
+          if (bool(uDrawVideo)) {
+            gl_FragColor = videoColor;
+          } else {
+            gl_FragColor = overlayColor;
+          }
         }
         
     """

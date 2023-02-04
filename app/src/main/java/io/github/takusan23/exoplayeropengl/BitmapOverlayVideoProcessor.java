@@ -46,9 +46,6 @@ import javax.microedition.khronos.opengles.GL10;
         implements VideoProcessingGLSurfaceView.VideoProcessor {
 
     private static final String TAG = "BitmapOverlayVP";
-    private static final int OVERLAY_WIDTH = 512;
-    private static final int OVERLAY_HEIGHT = 256;
-
     private final Context context;
     private final Paint paint;
     private final int[] textures;
@@ -58,17 +55,14 @@ import javax.microedition.khronos.opengles.GL10;
 
     private GlProgram program;
 
-    private float bitmapScaleX;
-    private float bitmapScaleY;
-
-    public BitmapOverlayVideoProcessor(Context context) {
+    public BitmapOverlayVideoProcessor(Context context, int canvasHeight, int canvasWidth) {
         this.context = context.getApplicationContext();
         paint = new Paint();
         paint.setTextSize(64);
         paint.setAntiAlias(true);
         paint.setARGB(0xFF, 0xFF, 0xFF, 0xFF);
         textures = new int[1];
-        overlayBitmap = Bitmap.createBitmap(OVERLAY_WIDTH, OVERLAY_HEIGHT, Bitmap.Config.ARGB_8888);
+        overlayBitmap = Bitmap.createBitmap(canvasHeight, canvasWidth, Bitmap.Config.ARGB_8888);
         overlayCanvas = new Canvas(overlayBitmap);
         try {
             logoBitmap = DrawableKt.toBitmap(ContextCompat.getDrawable(context, R.drawable.baseline_coronavirus_24), 300, 300, Bitmap.Config.ARGB_8888);
@@ -101,13 +95,18 @@ import javax.microedition.khronos.opengles.GL10;
         GLES20.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
         GLES20.glTexParameterf(GL10.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);
         GLUtils.texImage2D(GL10.GL_TEXTURE_2D, /* level= */ 0, overlayBitmap, /* border= */ 0);
+
+        // アルファブレンド を有効
+        // これにより、透明なテクスチャがちゃんと透明に描画される
+        GLES20.glEnable(GLES20.GL_BLEND);
+        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
     }
 
     @Override
     public void setSurfaceSize(int width, int height) {
         System.out.println(width);
-        bitmapScaleX = (float) width / OVERLAY_WIDTH;
-        bitmapScaleY = (float) height / OVERLAY_HEIGHT;
+        // bitmapScaleX = (float) width / OVERLAY_WIDTH;
+        // bitmapScaleY = (float) height / OVERLAY_HEIGHT;
     }
 
     @Override
@@ -129,16 +128,21 @@ import javax.microedition.khronos.opengles.GL10;
         GlProgram program = checkNotNull(this.program);
         program.setSamplerTexIdUniform("uTexSampler0", frameTexture, /* texUnitIndex= */ 0);
         program.setSamplerTexIdUniform("uTexSampler1", textures[0], /* texUnitIndex= */ 1);
-        program.setFloatUniform("uScaleX", bitmapScaleX);
-        program.setFloatUniform("uScaleY", bitmapScaleY);
+        // program.setFloatUniform("uScaleX", bitmapScaleX);
+        // program.setFloatUniform("uScaleY", bitmapScaleY);
 
-        // アスペクト比を調整して gl_Position にする
+
+        program.setFloatsUniform("uTexTransform", transformMatrix);
+
+        // --------------------------
+        // まず映像を描画する。映像を描画するフラグを立てます
+        // --------------------------
+        program.setIntUniform("uDrawVideo", 1);
+        // アスペクト比を調整して gl_Position を調整する
         float[] scaleTransform = GlUtil.getNormalizedCoordinateBounds();
         Matrix.setIdentityM(scaleTransform, 0);
         Matrix.scaleM(scaleTransform, 0, 1f, .56f, 1f);
         program.setFloatsUniform("scaleTransform", scaleTransform);
-
-        program.setFloatsUniform("uTexTransform", transformMatrix);
 
         try {
             program.bindAttributesAndUniforms();
@@ -152,6 +156,27 @@ import javax.microedition.khronos.opengles.GL10;
         } catch (GlUtil.GlException e) {
             Log.e(TAG, "Failed to draw a frame", e);
         }
+
+        // --------------------------
+        // 次に Canvas を描画する。フラグを下ろす
+        // --------------------------
+        program.setIntUniform("uDrawVideo", 0);
+        // Scale の調整を戻す
+        Matrix.setIdentityM(scaleTransform, 0);
+        program.setFloatsUniform("scaleTransform", scaleTransform);
+        try {
+            program.bindAttributesAndUniforms();
+        } catch (GlUtil.GlException e) {
+            Log.e(TAG, "Failed to update the shader program", e);
+        }
+        // GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, /* first= */ 0, /* count= */ 4);
+        try {
+            GlUtil.checkGlError();
+        } catch (GlUtil.GlException e) {
+            Log.e(TAG, "Failed to draw a frame", e);
+        }
+
     }
 
     @Override

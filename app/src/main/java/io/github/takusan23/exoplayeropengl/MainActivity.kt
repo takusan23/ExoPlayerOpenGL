@@ -19,23 +19,28 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(viewBinding.root)
 
-        val videoProcessingGLSurfaceView = VideoProcessingGLSurfaceView(this, false, BitmapOverlayVideoProcessor(this))
-        viewBinding.playerParentFrameLayout.addView(videoProcessingGLSurfaceView)
+        viewBinding.playerParentFrameLayout.post {
+            val canvasHeight = viewBinding.playerParentFrameLayout.height
+            val canvasWidth = viewBinding.playerParentFrameLayout.width
 
-        exoPlayer.repeatMode = Player.REPEAT_MODE_ALL
-        exoPlayer.setMediaItem(MediaItem.fromUri(DEFAULT_MEDIA_URI))
-        exoPlayer.prepare()
-        exoPlayer.play()
-        videoProcessingGLSurfaceView.setPlayer(exoPlayer)
-        exoPlayer.addAnalyticsListener(EventLogger())
+            val videoProcessingGLSurfaceView = VideoProcessingGLSurfaceView(this, false, BitmapOverlayVideoProcessor(this, canvasHeight, canvasWidth))
+            viewBinding.playerParentFrameLayout.addView(videoProcessingGLSurfaceView)
 
-        exoPlayer.addListener(object : Listener {
-            override fun onVideoSizeChanged(videoSize: VideoSize) {
-                super.onVideoSizeChanged(videoSize)
-                println("height = " + videoSize.height)
-                println("width = " + videoSize.width)
-            }
-        })
+            exoPlayer.repeatMode = Player.REPEAT_MODE_ALL
+            exoPlayer.setMediaItem(MediaItem.fromUri(DEFAULT_MEDIA_URI))
+            exoPlayer.prepare()
+            exoPlayer.play()
+            videoProcessingGLSurfaceView.setPlayer(exoPlayer)
+            exoPlayer.addAnalyticsListener(EventLogger())
+
+            exoPlayer.addListener(object : Listener {
+                override fun onVideoSizeChanged(videoSize: VideoSize) {
+                    super.onVideoSizeChanged(videoSize)
+                    println("height = " + videoSize.height)
+                    println("width = " + videoSize.width)
+                }
+            })
+        }
     }
 
     override fun onDestroy() {
