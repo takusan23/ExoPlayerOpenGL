@@ -132,10 +132,10 @@ import javax.microedition.khronos.opengles.GL10;
         program.setFloatUniform("uScaleX", bitmapScaleX);
         program.setFloatUniform("uScaleY", bitmapScaleY);
 
-        // 0.5 にして表示する
+        // アスペクト比を調整して gl_Position にする
         float[] scaleTransform = GlUtil.getNormalizedCoordinateBounds();
         Matrix.setIdentityM(scaleTransform, 0);
-        Matrix.scaleM(scaleTransform, 0, .5f, .5f, 1f);
+        Matrix.scaleM(scaleTransform, 0, 1f, .56f, 1f);
         program.setFloatsUniform("scaleTransform", scaleTransform);
 
         program.setFloatsUniform("uTexTransform", transformMatrix);
