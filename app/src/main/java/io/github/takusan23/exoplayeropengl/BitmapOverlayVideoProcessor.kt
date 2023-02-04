@@ -151,7 +151,6 @@ class BitmapOverlayVideoProcessor(
         // --------------------------
         program.setIntUniform("uDrawVideo", 0)
         // Scale の調整を戻す
-        // Scale の調整を戻す
         Matrix.setIdentityM(scaleTransform, 0)
         program.setFloatsUniform("scaleTransform", scaleTransform)
         try {
