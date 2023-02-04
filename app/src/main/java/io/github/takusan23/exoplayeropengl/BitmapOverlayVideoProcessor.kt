@@ -51,13 +51,17 @@ class BitmapOverlayVideoProcessor(
     private val textures = IntArray(1)
     private val overlayBitmap = Bitmap.createBitmap(canvasHeight, canvasWidth, Bitmap.Config.ARGB_8888)
     private val overlayCanvas = android.graphics.Canvas(overlayBitmap)
-    private val logoBitmap = ContextCompat.getDrawable(context, R.drawable.baseline_coronavirus_24)!!.toBitmap(300, 300, Bitmap.Config.ARGB_8888)
+    private val logoBitmap by lazy {
+        ContextCompat.getDrawable(context, R.drawable.outline_android_24)!!.apply {
+            setTint(Color.WHITE)
+        }.toBitmap(300, 300)
+    }
     private var program: GlProgram? = null
 
     private val paint = Paint().apply {
         textSize = 64f
         isAntiAlias = true
-        setARGB(0xFF, 0xFF, 0xFF, 0xFF)
+        color = Color.WHITE
     }
 
     override fun initialize() {
@@ -103,7 +107,7 @@ class BitmapOverlayVideoProcessor(
         // Draw to the canvas and store it in a texture.
         val text = String.format(Locale.US, "%.02f", frameTimestampUs / C.MICROS_PER_SECOND.toFloat())
         overlayBitmap.eraseColor(Color.TRANSPARENT)
-        // overlayCanvas.drawBitmap(logoBitmap, /* left= */ 32, /* top= */ 32, paint);
+        overlayCanvas.drawBitmap(logoBitmap, 1100f, 1100f, paint)
         overlayCanvas.drawText(text, 200f, 130f, paint)
         GLES20.glBindTexture(GL10.GL_TEXTURE_2D, textures[0])
         GLUtils.texSubImage2D(GL10.GL_TEXTURE_2D, 0, 0, 0, overlayBitmap)
@@ -167,6 +171,7 @@ class BitmapOverlayVideoProcessor(
     override fun release() {
         try {
             program?.delete()
+            logoBitmap.recycle()
         } catch (e: GlException) {
             Log.e(TAG, "Failed to delete the shader program", e)
         }
@@ -227,7 +232,7 @@ class BitmapOverlayVideoProcessor(
         // Vertical scaling factory for the overlap bitmap.
         // uniform float uScaleY;
         varying vec2 vTexCoords;
-        
+        // 1 = draw video / 0 = draw canvas 
         uniform int uDrawVideo;
         
         void main() {
@@ -235,6 +240,7 @@ class BitmapOverlayVideoProcessor(
           vec4 overlayColor = texture2D(uTexSampler1, vec2(vTexCoords.x, vTexCoords.y));
 
           // 映像の描画 or テクスチャの描画
+          // アルファブレンドの設定をしておく必要あり
           if (bool(uDrawVideo)) {
             gl_FragColor = videoColor;
           } else {

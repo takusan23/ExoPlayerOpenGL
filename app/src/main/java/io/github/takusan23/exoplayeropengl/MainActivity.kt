@@ -49,7 +49,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
-        private const val DEFAULT_MEDIA_URI = "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8"
+        private const val DEFAULT_MEDIA_URI = "file:///android_asset/toomo.mp4"
     }
 
 }
