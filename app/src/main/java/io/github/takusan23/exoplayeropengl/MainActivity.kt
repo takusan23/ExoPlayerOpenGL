@@ -5,9 +5,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.Player
-import com.google.android.exoplayer2.Player.Listener
 import com.google.android.exoplayer2.util.EventLogger
-import com.google.android.exoplayer2.video.VideoSize
 import io.github.takusan23.exoplayeropengl.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -32,14 +30,6 @@ class MainActivity : AppCompatActivity() {
             exoPlayer.play()
             videoProcessingGLSurfaceView.setPlayer(exoPlayer)
             exoPlayer.addAnalyticsListener(EventLogger())
-
-            exoPlayer.addListener(object : Listener {
-                override fun onVideoSizeChanged(videoSize: VideoSize) {
-                    super.onVideoSizeChanged(videoSize)
-                    println("height = " + videoSize.height)
-                    println("width = " + videoSize.width)
-                }
-            })
         }
     }
 
